@@ -8,13 +8,20 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-light">
+<body class="bg-light" onload="loadData()">
 
 <div class="container mt-5">
     <div class="card mx-auto" style="max-width: 400px;">
         <div class="card-body">
 
             <h3 class="text-center mb-3">Mani darbi</h3>
+
+            <!-- PIEVIENOTS: prioritāte -->
+            <select id="priority" class="form-select mb-2">
+                <option value="danger">Svarīgi</option>
+                <option value="warning" selected>Vidēji</option>
+                <option value="success">Zema</option>
+            </select>
 
             <div class="input-group mb-3">
                 <input type="text" id="taskInput" class="form-control">
@@ -26,24 +33,65 @@
         </div>
     </div>  
 </div>
+
 <script>
+    
     function addTask() {
         let input = document.getElementById("taskInput");
         let text = input.value;
 
         if (text === "") return;
 
+        let priority = document.getElementById("priority").value;
+
         let li = document.createElement("li");
         li.className = "list-group-item";
 
-        li.innerHTML = text + 
-            '<button class="btn btn-danger btn-sm float-end" onclick="this.parentElement.remove()">Dzēst</button>';
+        li.innerHTML = `
+            <input type="checkbox" class="form-check-input me-2" onchange="toggleDone(this)">
+            <span class="badge bg-${priority} me-2">${priorityText(priority)}</span>
+            <span class="task-text">${text}</span>
+            <button class="btn btn-danger btn-sm float-end" onclick="deleteTask(this)">Dzēst</button>
+        `;
 
         document.getElementById("task-list").appendChild(li);
         input.value = "";
+
+        saveData();
+    }
+
+    
+
+    function toggleDone(checkbox) {
+        let text = checkbox.parentElement.querySelector(".task-text");
+        text.classList.toggle("text-decoration-line-through");
+        saveData();
+    }
+
+    function deleteTask(btn) {
+        btn.parentElement.remove();
+        saveData();
+    }
+
+    function priorityText(value) {
+        if (value === "danger") return "Svarīgi";
+        if (value === "warning") return "Vidēji";
+        return "Zema";
+    }
+
+    function saveData() {
+        localStorage.setItem("tasks", JSON.stringify(
+            document.getElementById("task-list").innerHTML
+        ));
+    }
+
+    function loadData() {
+        let data = localStorage.getItem("tasks");
+        if (data) {
+            document.getElementById("task-list").innerHTML = JSON.parse(data);
+        }
     }
 </script>
-
 
 </body>
 </html>
