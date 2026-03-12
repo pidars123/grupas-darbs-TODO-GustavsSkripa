@@ -1,103 +1,177 @@
-<!-- Gustavs Skripa V1 -->
-
 <!DOCTYPE html>
 <html lang="lv">
 <head>
     <meta charset="UTF-8">
-    <title>To Do list</title>
-
+    <title>To Do List V3</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .done { text-decoration: line-through; opacity: 0.6; }
+        .task-item { cursor: pointer; }
+    </style>
 </head>
 <body class="bg-light" onload="loadData()">
 
 <div class="container mt-5">
-    <div class="card mx-auto" style="max-width: 400px;">
+    <div class="card mx-auto shadow" style="max-width: 500px;">
         <div class="card-body">
+            <h3 class="text-center mb-4">Mani Darbi V3</h3>
 
-            <h3 class="text-center mb-3">Mani darbi</h3>
+            <input type="text" id="searchInput" class="form-control mb-3" placeholder="Meklēt uzdevumu..." onkeyup="filterTasks()">
 
-            <!-- PIEVIENOTS: prioritāte -->
-            <select id="priority" class="form-select mb-2">
-                <option value="danger">Svarīgi</option>
-                <option value="warning" selected>Vidēji</option>
-                <option value="success">Zema</option>
-            </select>
-
-            <div class="input-group mb-3">
-                <input type="text" id="taskInput" class="form-control">
-                <button class="btn btn-primary" onclick="addTask()">Pievienot</button>
+            <div class="btn-group w-100 mb-3">
+                <button class="btn btn-outline-primary active" id="btn-all" onclick="setStatus('all')">Visi</button>
+                <button class="btn btn-outline-primary" id="btn-active" onclick="setStatus('active')">Aktīvie</button>
+                <button class="btn btn-outline-primary" id="btn-comp" onclick="setStatus('comp')">Pabeigtie</button>
             </div>
 
-            <ul id="task-list" class="list-group"></ul>
+            <div class="row g-2 mb-3">
+                <div class="col-4">
+                    <select id="priority" class="form-select">
+                        <option value="danger">Svarīgi</option>
+                        <option value="warning" selected>Vidēji</option>
+                        <option value="success">Zema</option>
+                    </select>
+                </div>
+                <div class="col-8">
+                    <div class="input-group">
+                        <input type="text" id="taskInput" class="form-control" placeholder="Jauns darbs...">
+                        <button class="btn btn-primary" onclick="addTask()">Pievienot</button>
+                    </div>
+                </div>
+            </div>
 
+            <ul id="task-list" class="list-group mb-3"></ul>
+
+            <div class="d-flex justify-content-between align-items-center small text-muted border-top pt-2">
+                <span id="taskCount">Atlikuši 0 darbi</span>
+                <button class="btn btn-sm btn-link text-danger text-decoration-none" onclick="clearCompleted()">Notīrīt pabeigtos</button>
+            </div>
         </div>
-    </div>  
+    </div>
 </div>
 
 <script>
-    
+    let currentStatus = 'all';
+
     function addTask() {
         let input = document.getElementById("taskInput");
-        let text = input.value;
-
+        let text = input.value.trim();
         if (text === "") return;
 
         let priority = document.getElementById("priority").value;
+        createTask(text, priority, false);
+        
+        input.value = "";
+        saveData();
+        filterTasks();
+    }
 
+    function createTask(text, priority, isDone) {
         let li = document.createElement("li");
-        li.className = "list-group-item";
+        li.className = "list-group-item d-flex align-items-center justify-content-between task-row";
+        if (isDone) li.classList.add("is-completed");
 
-li.innerHTML = `
-    <div class="d-flex align-items-center flex-grow-1">
-        <span class="badge bg-${priority} me-2">${priorityText(priority)}</span>
-        <span class="task-text ${isDone ? 'done' : ''} task-item" onclick="toggleTask(this)">${text}</span>
-    </div>
-    <div>
-        <button class="btn btn-sm btn-outline-info me-1" onclick="editTask(this)">Labot</button>
-        <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(this)">Dzēst</button>
-    </div>
-`;
+        li.innerHTML = `
+            <div class="d-flex align-items-center flex-grow-1">
+                <span class="badge bg-${priority} me-2">${priorityText(priority)}</span>
+                <span class="task-text ${isDone ? 'done' : ''} task-item" onclick="toggleTask(this)">${text}</span>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-info me-1" onclick="editTask(this)">Labot</button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(this)">Dzēst</button>
+            </div>
+        `;
 
         document.getElementById("task-list").appendChild(li);
-        input.value = "";
-
-        saveData();
+        updateStats();
     }
 
-    
+    function toggleTask(span) {
+        span.classList.toggle("done");
+        span.closest("li").classList.toggle("is-completed");
+        saveData();
+        updateStats();
+        filterTasks();
+    }
 
-function toggleDone(element) {
-    // 'element' tagad ir pats <span class="task-text">
-    element.classList.toggle("text-decoration-line-through");
-    saveData();
-}
     function deleteTask(btn) {
-        btn.parentElement.remove();
+        btn.closest("li").remove();
         saveData();
+        updateStats();
     }
 
-    function priorityText(value) {
-        if (value === "danger") return "Svarīgi";
-        if (value === "warning") return "Vidēji";
+    function editTask(btn) {
+        let span = btn.closest("li").querySelector(".task-text");
+        let jauns = prompt("Labot uzdevumu:", span.innerText);
+        if (jauns) {
+            span.innerText = jauns;
+            saveData();
+        }
+    }
+
+    function setStatus(status) {
+        currentStatus = status;
+        document.querySelectorAll(".btn-group .btn").forEach(b => b.classList.remove("active"));
+        document.getElementById("btn-" + status).classList.add("active");
+        filterTasks();
+    }
+
+    function filterTasks() {
+        let search = document.getElementById("searchInput").value.toLowerCase();
+        let rows = document.querySelectorAll(".task-row");
+
+        rows.forEach(row => {
+            let text = row.querySelector(".task-text").innerText.toLowerCase();
+            let isDone = row.classList.contains("is-completed");
+
+            let matchesSearch = text.includes(search);
+            let matchesFilter = false;
+
+            if (currentStatus === 'all') matchesFilter = true;
+            if (currentStatus === 'active' && !isDone) matchesFilter = true;
+            if (currentStatus === 'comp' && isDone) matchesFilter = true;
+
+            if (matchesSearch && matchesFilter) {
+                row.setAttribute("style", "display: flex !important");
+            } else {
+                row.setAttribute("style", "display: none !important");
+            }
+        });
+    }
+
+    function clearCompleted() {
+        document.querySelectorAll(".is-completed").forEach(el => el.remove());
+        saveData();
+        updateStats();
+    }
+
+    function updateStats() {
+        let count = document.querySelectorAll(".task-row:not(.is-completed)").length;
+        document.getElementById("taskCount").innerText = "Atlikuši " + count + " darbi";
+    }
+
+    function priorityText(p) {
+        if (p === 'danger') return "SVARĪGI";
+        if (p === 'warning') return "Vidēji";
         return "Zema";
     }
 
     function saveData() {
- let tasks = [];
-document.querySelectorAll(".task-row").forEach(row => {
-    tasks.push({
-        t: row.querySelector(".task-text").innerText,
-        p: row.querySelector(".badge").classList[1].replace("bg-", ""),
-        d: row.classList.contains("is-completed")
-    });
-});
-localStorage.setItem("tasks_v3", JSON.stringify(tasks));
+        let tasks = [];
+        document.querySelectorAll(".task-row").forEach(row => {
+            tasks.push({
+                t: row.querySelector(".task-text").innerText,
+                p: row.querySelector(".badge").classList[1].replace("bg-", ""),
+                d: row.classList.contains("is-completed")
+            });
+        });
+        localStorage.setItem("tasks_v3", JSON.stringify(tasks));
     }
 
     function loadData() {
-        let data = localStorage.getItem("tasks");
+        let data = localStorage.getItem("tasks_v3");
         if (data) {
-            document.getElementById("task-list").innerHTML = JSON.parse(data);
+            JSON.parse(data).forEach(item => createTask(item.t, item.p, item.d));
         }
     }
 </script>
