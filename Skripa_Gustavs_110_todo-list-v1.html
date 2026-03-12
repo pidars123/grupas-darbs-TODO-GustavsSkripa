@@ -48,9 +48,14 @@
         li.className = "list-group-item";
 
 li.innerHTML = `
-    <span class="badge bg-${priority} me-2">${priorityText(priority)}</span>
-    <span class="task-text" onclick="toggleDone(this)" style="cursor: pointer;">${text}</span>
-    <button class="btn btn-danger btn-sm float-end" onclick="deleteTask(this)">Dzēst</button>
+    <div class="d-flex align-items-center flex-grow-1">
+        <span class="badge bg-${priority} me-2">${priorityText(priority)}</span>
+        <span class="task-text ${isDone ? 'done' : ''} task-item" onclick="toggleTask(this)">${text}</span>
+    </div>
+    <div>
+        <button class="btn btn-sm btn-outline-info me-1" onclick="editTask(this)">Labot</button>
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(this)">Dzēst</button>
+    </div>
 `;
 
         document.getElementById("task-list").appendChild(li);
@@ -78,9 +83,15 @@ function toggleDone(element) {
     }
 
     function saveData() {
-        localStorage.setItem("tasks", JSON.stringify(
-            document.getElementById("task-list").innerHTML
-        ));
+ let tasks = [];
+document.querySelectorAll(".task-row").forEach(row => {
+    tasks.push({
+        t: row.querySelector(".task-text").innerText,
+        p: row.querySelector(".badge").classList[1].replace("bg-", ""),
+        d: row.classList.contains("is-completed")
+    });
+});
+localStorage.setItem("tasks_v3", JSON.stringify(tasks));
     }
 
     function loadData() {
