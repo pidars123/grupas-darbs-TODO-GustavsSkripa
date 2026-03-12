@@ -47,12 +47,11 @@
         let li = document.createElement("li");
         li.className = "list-group-item";
 
-        li.innerHTML = `
-            <input type="checkbox" class="form-check-input me-2" onchange="toggleDone(this)">
-            <span class="badge bg-${priority} me-2">${priorityText(priority)}</span>
-            <span class="task-text">${text}</span>
-            <button class="btn btn-danger btn-sm float-end" onclick="deleteTask(this)">Dzēst</button>
-        `;
+li.innerHTML = `
+    <span class="badge bg-${priority} me-2">${priorityText(priority)}</span>
+    <span class="task-text" onclick="toggleDone(this)" style="cursor: pointer;">${text}</span>
+    <button class="btn btn-danger btn-sm float-end" onclick="deleteTask(this)">Dzēst</button>
+`;
 
         document.getElementById("task-list").appendChild(li);
         input.value = "";
@@ -62,12 +61,11 @@
 
     
 
-    function toggleDone(checkbox) {
-        let text = checkbox.parentElement.querySelector(".task-text");
-        text.classList.toggle("text-decoration-line-through");
-        saveData();
-    }
-
+function toggleDone(element) {
+    // 'element' tagad ir pats <span class="task-text">
+    element.classList.toggle("text-decoration-line-through");
+    saveData();
+}
     function deleteTask(btn) {
         btn.parentElement.remove();
         saveData();
